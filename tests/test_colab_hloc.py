@@ -126,7 +126,7 @@ def test_adapter_passes_exact_configs_and_validates_before_materializing(
             captured.update(kwargs)
             return output
 
-    module = ModuleType("remap.colab_model_backend")
+    module = ModuleType("remap.colab.model_backend")
     module.ColabModelBackend = Backend
     monkeypatch.setitem(sys.modules, module.__name__, module)
     monkeypatch.setattr(colab_hloc, "resolve_options", lambda *args: deepcopy(options))

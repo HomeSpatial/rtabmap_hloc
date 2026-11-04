@@ -397,7 +397,7 @@ def run_colab_features(
     image_list: list[str] | None = None,
     profile: str = PROFILE,
 ) -> dict[str, Path]:
-    from remap.colab_model_backend import ColabModelBackend
+    from remap.colab.model_backend import ColabModelBackend
 
     options = resolve_options(feature_conf, retrieval_conf, matcher_conf, num_matched)
     images = image_inputs(images_dir, image_list)
