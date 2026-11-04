@@ -1,0 +1,36 @@
+[project]
+name = "rtabmap_hloc_reprocess"
+version = "0.1.0"
+readme = "README.md"
+description = "Convert RTABMap database to COLMAP/HLOC format and perform sparse reconstruction"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy",
+    "opencv-python",
+    "scipy",
+    "h5py",
+    "torch",
+    "tqdm",
+    "matplotlib",
+    "pillow",
+    "pycolmap>=3.13,<5",
+    "hloc @ git+https://github.com/cvg/Hierarchical-Localization.git@c13273bd0ecc2917a35910fd843712a1c6243193",
+]
+
+[project.optional-dependencies]
+onnx = ["onnxruntime-gpu[cuda,cudnn]>=1.26.0"]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+]
+
+[project.scripts]
+rtabmap-hloc = "rtabmap_hloc_reprocess.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

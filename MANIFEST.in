@@ -1,0 +1,3 @@
+include uv.lock
+include setup_env.sh
+recursive-include tests *.py
