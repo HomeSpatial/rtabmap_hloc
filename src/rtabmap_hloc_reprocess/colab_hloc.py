@@ -404,7 +404,7 @@ def run_colab_features(
     inputs = bundle_hloc_sources(options)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    with ColabModelBackend(profile=profile) as backend:
+    with ColabModelBackend(profile=profile, hloc_handler=Path(__file__)) as backend:
         result_dir = backend.run("hloc", images=images, options=options, inputs=inputs)
         paths = validate_result(result_dir, images, options)
         manifests = {

@@ -143,6 +143,7 @@ def test_adapter_passes_exact_configs_and_validates_before_materializing(
         20,
         list(images),
     )
+    assert captured["constructor"]["hloc_handler"] == Path(colab_hloc.__file__)
     assert captured["task"] == "hloc"
     assert captured["options"] == options
     assert captured["images"] == images
