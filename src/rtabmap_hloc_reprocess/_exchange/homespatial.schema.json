@@ -1,0 +1,82 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "map_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "map_id": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]{0,18}$"
+        },
+        "frame_revision": {
+          "$ref": "#/$defs/id"
+        },
+        "coordinate_system": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "map_id",
+        "frame_revision",
+        "coordinate_system"
+      ]
+    },
+    "artifact_bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "asset": {
+            "$ref": "#/$defs/id"
+          },
+          "artifact_version_id": {
+            "$ref": "#/$defs/id"
+          },
+          "output_frame_digest": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "asset",
+          "artifact_version_id",
+          "output_frame_digest"
+        ]
+      }
+    },
+    "resource_selections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "$ref": "#/$defs/id"
+          },
+          "asset": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "required": [
+          "role",
+          "asset"
+        ]
+      }
+    },
+    "map_id": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    }
+  },
+  "required": [],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

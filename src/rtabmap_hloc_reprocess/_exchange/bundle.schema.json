@@ -1,0 +1,473 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reconstruction bundle v1",
+  "type": "object",
+  "required": [
+    "kind",
+    "schema_version",
+    "scene_id",
+    "asset_lock",
+    "assets",
+    "coordinate_systems"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "const": "reconstruction_bundle"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scene_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scene": {
+      "$ref": "#/$defs/ref"
+    },
+    "asset_lock": {
+      "$ref": "#/$defs/ref"
+    },
+    "depth_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "frame_ids",
+          "origin",
+          "producer"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "frame_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "origin": {
+            "enum": [
+              "sensor",
+              "prediction",
+              "fusion",
+              "unknown"
+            ]
+          },
+          "producer": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/asset"
+      },
+      "minItems": 0
+    },
+    "coordinate_systems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/coordinates"
+      }
+    },
+    "coordinate_transforms": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/transform"
+      }
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/run"
+      }
+    },
+    "extensions": {
+      "$ref": "#/$defs/extensions"
+    },
+    "reconstructions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reconstruction_ref"
+      }
+    },
+    "external_roots": {
+      "$ref": "#/$defs/external_roots"
+    },
+    "coverage": {
+      "$ref": "#/$defs/coverage"
+    },
+    "packaging": {
+      "enum": [
+        "self_contained",
+        "external_references"
+      ]
+    }
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "required": [
+        "root",
+        "path",
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "root": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)(?:\\.{1,2})(?:/|$))(?!.*//)(?!.*[\\\\:\\u0000])(?!.*\\/$).+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_-]*(\\.[a-z][a-z0-9_-]*)+$"
+      },
+      "additionalProperties": true
+    },
+    "matrix4": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "array",
+        "minItems": 4,
+        "maxItems": 4,
+        "items": {
+          "type": "number"
+        }
+      }
+    },
+    "coordinates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "handedness",
+        "up_axis",
+        "metres_per_unit"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "handedness": {
+          "enum": [
+            "right",
+            "left",
+            "unknown"
+          ]
+        },
+        "up_axis": {
+          "enum": [
+            "+X",
+            "-X",
+            "+Y",
+            "-Y",
+            "+Z",
+            "-Z",
+            "unknown"
+          ]
+        },
+        "metres_per_unit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      }
+    },
+    "asset_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "ref"
+      ],
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/id"
+        },
+        "ref": {
+          "$ref": "#/$defs/ref"
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "format",
+        "files"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "$ref": "#/$defs/id"
+        },
+        "format": {
+          "$ref": "#/$defs/id"
+        },
+        "format_version": {
+          "$ref": "#/$defs/id"
+        },
+        "coordinate_system": {
+          "$ref": "#/$defs/id"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/asset_file"
+          },
+          "minItems": 1
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        }
+      }
+    },
+    "transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/id"
+        },
+        "to": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "rigid",
+            "similarity"
+          ]
+        },
+        "units": {
+          "enum": [
+            "native",
+            "metres"
+          ]
+        },
+        "T_to_from": {
+          "$ref": "#/$defs/matrix4"
+        },
+        "method": {
+          "$ref": "#/$defs/id"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/ref"
+          }
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "kind",
+        "units",
+        "T_to_from",
+        "method",
+        "evidence"
+      ]
+    },
+    "run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "producer",
+        "inputs",
+        "outputs"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "producer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name"
+          ],
+          "properties": {
+            "name": {
+              "$ref": "#/$defs/id"
+            },
+            "version": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      }
+    },
+    "reconstruction_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "format",
+        "format_version",
+        "document"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "format": {
+          "$ref": "#/$defs/id"
+        },
+        "format_version": {
+          "$ref": "#/$defs/id"
+        },
+        "document": {
+          "$ref": "#/$defs/ref"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ref"
+          }
+        },
+        "extensions": {
+          "$ref": "#/$defs/extensions"
+        }
+      }
+    },
+    "external_roots": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(?!local$)(?!manifest$)[A-Za-z][A-Za-z0-9_-]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope": {
+          "$ref": "#/$defs/id"
+        },
+        "status": {
+          "enum": [
+            "full",
+            "subset",
+            "unknown"
+          ]
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "reference_asset": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "scope",
+        "status"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "subset"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "ids"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "assets": {
+          "minItems": 1
+        }
+      }
+    },
+    {
+      "required": [
+        "reconstructions"
+      ],
+      "properties": {
+        "reconstructions": {
+          "minItems": 1
+        }
+      }
+    }
+  ]
+}

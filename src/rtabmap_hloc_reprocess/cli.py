@@ -5,6 +5,7 @@ Command Line Interface for RTABMap-HLOC Reprocessing Pipeline
 import argparse
 import sys
 from pathlib import Path
+from jsonschema import ValidationError
 
 
 def main():
@@ -21,7 +22,6 @@ def main():
     parser.add_argument(
         "-o", "--output",
         type=str,
-        required=True,
         help="Output directory for reconstruction results"
     )
 
@@ -124,7 +124,22 @@ def main():
         help="pycolmap CameraMode used during SfM (recorded in metadata.json)",
     )
 
+    parser.add_argument("--scene-id", default="", help="Portable scene identity; defaults to output directory name")
+    parser.add_argument("--bundle", type=Path, help="Append successful SfM to this bundle; derives output and scene ID")
+    parser.add_argument("--stage", default="sfm", help="New immutable bundle stage (default: sfm)")
+    parser.add_argument("--up-axis", default="+Z", choices=["+X", "-X", "+Y", "-Y", "+Z", "-Z"],
+                        help="Declared RTAB-Map world up axis; default +Z. Does not rotate geometry.")
     args = parser.parse_args()
+    stage_plan = None
+    if args.bundle:
+        from ._exchange.bundle import plan
+        try:
+            stage_plan = plan(args.bundle, args.stage, "rtabmap-hloc", scene_id=args.scene_id, out=args.output)
+            args.output, args.scene_id = stage_plan["output"], stage_plan["scene_id"]
+        except (ValueError, OSError, ValidationError) as exc:
+            parser.error(str(exc))
+    elif not args.output:
+        parser.error("--output or --bundle is required")
 
     # Validate input
     db_path = Path(args.rtabmap_db)
@@ -153,10 +168,24 @@ def main():
         verbose=args.verbose,
         map_id=args.map_id,
         camera_mode=args.camera_mode,
+        scene_id=args.scene_id,
+        up_axis=args.up_axis,
     )
 
     pipeline = RTABMapHLOCPipeline(config)
     result = pipeline.run()
+
+    if result.success and stage_plan:
+        from ._exchange.bundle import publish
+        from .exchange import write_run_status
+        try:
+            publication = publish(stage_plan, result.description_path)
+            print(f"Bundle stage published: {publication['stage']} -> {publication['bundle']}")
+        except (ValueError, OSError, ValidationError) as exc:
+            result.success = False
+            result.error = f"Bundle publication failed; standalone result retained: {exc}"
+            write_run_status(pipeline, result)
+            print(result.error)
 
     if result.success:
         print("\n✓ Pipeline completed successfully!")

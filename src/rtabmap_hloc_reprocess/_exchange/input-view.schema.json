@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/scene"
+    },
+    {
+      "$ref": "#/$defs/frames"
+    },
+    {
+      "$ref": "#/$defs/alignment"
+    }
+  ],
+  "$defs": {
+    "alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "kind",
+        "scene_id",
+        "T_work_from_source_m",
+        "method",
+        "source"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "alignment"
+        },
+        "scene_id": {
+          "$ref": "#/$defs/id"
+        },
+        "T_work_from_source_m": {
+          "$ref": "#/$defs/mat4"
+        },
+        "method": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "path"
+      ],
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/id"
+        },
+        "path": {
+          "$ref": "#/$defs/id"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "axes",
+        "pixel_convention",
+        "K",
+        "T_source_from_camera"
+      ],
+      "properties": {
+        "model": {
+          "const": "pinhole_rectified"
+        },
+        "axes": {
+          "const": "x_right_y_down_z_forward"
+        },
+        "pixel_convention": {
+          "const": "top_left_integer_centres"
+        },
+        "K": {
+          "$ref": "#/$defs/mat3"
+        },
+        "T_source_from_camera": {
+          "$ref": "#/$defs/mat4"
+        }
+      }
+    },
+    "frames": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "kind",
+        "scene_id",
+        "frames"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "frames"
+        },
+        "scene_id": {
+          "$ref": "#/$defs/id"
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "size"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "size": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "image": {
+                "$ref": "#/$defs/asset"
+              },
+              "camera": {
+                "$ref": "#/$defs/camera"
+              },
+              "depth": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "asset",
+                  "metres_per_unit",
+                  "measurement"
+                ],
+                "properties": {
+                  "asset": {
+                    "$ref": "#/$defs/asset"
+                  },
+                  "metres_per_unit": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "measurement": {
+                    "const": "camera_z"
+                  },
+                  "invalid_value": {
+                    "type": "number"
+                  }
+                }
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/source"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "mat3": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/vec3"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "mat4": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/row4"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "row4": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "kind",
+        "scene_id",
+        "source_coordinates",
+        "geometry"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "scene"
+        },
+        "scene_id": {
+          "$ref": "#/$defs/id"
+        },
+        "source_coordinates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "handedness",
+            "up_axis",
+            "metres_per_unit"
+          ],
+          "properties": {
+            "handedness": {
+              "const": "right"
+            },
+            "up_axis": {
+              "enum": [
+                "+X",
+                "-X",
+                "+Y",
+                "-Y",
+                "+Z",
+                "-Z",
+                "unknown"
+              ]
+            },
+            "metres_per_unit": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "geometry": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type",
+              "asset",
+              "coordinate_frame",
+              "has_color"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "type": {
+                "enum": [
+                  "mesh",
+                  "point_cloud"
+                ]
+              },
+              "asset": {
+                "$ref": "#/$defs/asset"
+              },
+              "coordinate_frame": {
+                "enum": [
+                  "source",
+                  "work"
+                ]
+              },
+              "has_color": {
+                "type": "boolean"
+              },
+              "source": {
+                "$ref": "#/$defs/source"
+              }
+            }
+          }
+        },
+        "frames": {
+          "$ref": "#/$defs/asset"
+        },
+        "alignment": {
+          "$ref": "#/$defs/asset"
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "reference"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "measurement",
+            "prediction",
+            "inference",
+            "user",
+            "legacy_record"
+          ]
+        },
+        "reference": {
+          "$ref": "#/$defs/asset"
+        },
+        "record_id": {
+          "type": "string"
+        },
+        "frame_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "uniqueItems": true
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "vec3": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}

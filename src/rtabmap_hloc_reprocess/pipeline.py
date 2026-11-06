@@ -41,6 +41,8 @@ class PipelineConfig:
     # Provenance metadata (schema v2, consumed by build_map_pack)
     map_id: str = ""
     camera_mode: str = "AUTO"  # pycolmap.CameraMode name used by full SfM import_images.
+    scene_id: str = ""
+    up_axis: str = "+Z"
 
 
 @dataclass
@@ -65,6 +67,10 @@ class PipelineResult:
     # Paths
     images_dir: str = ""
     sfm_dir: str = ""
+    description_path: str = ""
+    alignment_status: str = "not_estimated"
+    alignment_method: str = ""
+    error: Optional[str] = None
 
 
 class RTABMapHLOCPipeline:
@@ -90,6 +96,12 @@ class RTABMapHLOCPipeline:
         """Run the complete pipeline"""
         result = PipelineResult()
 
+        # A published description is an immutable snapshot; do not mutate its native files.
+        if (self.output_dir / "reconstruction.json").exists():
+            result.error = "Output already contains a reconstruction snapshot; choose a new output directory"
+            print(result.error)
+            return result
+
         try:
             # Step 1: Export images from RTABMap
             print("=" * 60)
@@ -100,8 +112,7 @@ class RTABMapHLOCPipeline:
             print(f"Exported {result.num_images_exported} images")
 
             if result.num_images_exported == 0:
-                print("No images exported, aborting.")
-                return result
+                raise RuntimeError("No images exported")
 
             # Step 2: Run HLOC reconstruction (or load existing)
             print("\n" + "=" * 60)
@@ -119,11 +130,12 @@ class RTABMapHLOCPipeline:
                 result.reconstruction = self._run_hloc_reconstruction()
 
             if result.reconstruction is None:
-                print("HLOC reconstruction failed.")
-                return result
+                raise RuntimeError("HLOC reconstruction failed")
 
             result.num_images_registered = result.reconstruction.num_reg_images()
             result.num_points3d = result.reconstruction.num_points3D()
+            if result.num_images_registered == 0:
+                raise RuntimeError("SfM has no registered images")
 
             # Step 3: Sim3 alignment (skip if using existing poses)
             if self.config.use_existing_poses:
@@ -138,28 +150,39 @@ class RTABMapHLOCPipeline:
                 result.scale = 1.0
                 result.alignment_error_mean = 0.0
                 result.alignment_error_max = 0.0
+                result.alignment_status = "input_poses"
+                result.alignment_method = "triangulation_with_existing_metric_poses"
             else:
                 print("\n" + "=" * 60)
                 print("Step 3: Estimating Sim3 alignment to recover scale")
                 print("=" * 60)
+                result.alignment_status = "failed"
                 self._estimate_sim3_alignment(result)
+                if result.alignment_status != "aligned":
+                    raise RuntimeError("Sim3 alignment did not complete; metric output is unavailable")
 
-            result.success = True
             result.images_dir = str(self.images_dir)
-            result.sfm_dir = str(self.sfm_dir)
+            result.sfm_dir = str(self.output_dir / "sfm_aligned")
 
             # Print summary
             self._print_summary(result)
 
             # Export metadata JSON
-            if result.success:
-                self._export_metadata(result)
+            self._export_metadata(result)
+            from .exchange import export_description
+            result.description_path = str(export_description(self, result))
+            result.success = True
 
         except Exception as e:
+            result.success = False
+            result.error = str(e)
             print(f"Pipeline failed with error: {e}")
             import traceback
 
             traceback.print_exc()
+
+        from .exchange import write_run_status
+        write_run_status(self, result)
 
         return result
 
@@ -449,6 +472,10 @@ class RTABMapHLOCPipeline:
             "map_id": self.config.map_id,
             "world_frame": world_frame,
             "sim3_scale": sim3_scale,
+            "alignment_status": result.alignment_status,
+            "alignment_method": result.alignment_method,
+            "alignment_error_mean_m": result.alignment_error_mean,
+            "alignment_error_max_m": result.alignment_error_max,
             "registered_images": int(result.num_images_registered),
             "total_images": int(result.num_images_exported),
             "feature_dim": feature_dim,
@@ -631,8 +658,10 @@ class RTABMapHLOCPipeline:
             min_common_images=5,
             verbose=self.config.verbose,
         )
+        method = "ransac_sim3"
 
         if scale is None:
+            method = "least_squares_sim3_fallback"
             hloc_poses = get_reconstruction_poses(result.reconstruction)
             print(f"  RANSAC failed, falling back to direct least-squares")
             print(
@@ -646,8 +675,14 @@ class RTABMapHLOCPipeline:
                 verbose=self.config.verbose,
             )
             if scale is None:
-                print("Failed to estimate Sim3 transformation")
-                return
+                raise RuntimeError("Sim3 alignment failed in both RANSAC and least-squares fallback")
+
+        R, t = np.asarray(R, dtype=float), np.asarray(t, dtype=float)
+        if (not np.isfinite(scale) or scale <= 0 or R.shape != (3, 3) or t.shape != (3,)
+                or not np.isfinite(R).all() or not np.isfinite(t).all()
+                or not np.allclose(R.T @ R, np.eye(3), atol=1e-5)
+                or not np.isclose(np.linalg.det(R), 1.0, atol=1e-5)):
+            raise RuntimeError("Sim3 estimator returned a nonfinite or invalid transform")
 
         print(f"Estimated Sim3 transformation from {len(matched)} correspondences:")
         print(f"  Scale: {scale:.6f}")
@@ -662,6 +697,8 @@ class RTABMapHLOCPipeline:
         mean_rot_err, max_rot_err, _ = compute_rotation_error(
             hloc_poses, self.rtabmap_poses, self.image_to_node_id, R
         )
+        if not np.isfinite([mean_err, max_err, mean_rot_err, max_rot_err]).all():
+            raise RuntimeError("Sim3 alignment diagnostics are nonfinite")
 
         print(f"\nAlignment error after Sim3:")
         print(f"  Position - Mean: {mean_err:.4f} m, Max: {max_err:.4f} m")
@@ -683,6 +720,8 @@ class RTABMapHLOCPipeline:
         result.translation = t
         result.alignment_error_mean = mean_err
         result.alignment_error_max = max_err
+        result.alignment_status = "aligned"
+        result.alignment_method = method
 
     def _print_summary(self, result: PipelineResult):
         """Print pipeline summary"""

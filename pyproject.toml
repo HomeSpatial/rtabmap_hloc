@@ -13,6 +13,7 @@ dependencies = [
     "tqdm",
     "matplotlib",
     "pillow",
+    "jsonschema>=4.21,<5",
     "pycolmap>=3.13,<5",
     "hloc @ git+https://github.com/cvg/Hierarchical-Localization.git@c13273bd0ecc2917a35910fd843712a1c6243193",
 ]
@@ -34,3 +35,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+rtabmap_hloc_reprocess = ["_exchange/*.json"]
