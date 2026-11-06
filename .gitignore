@@ -14,3 +14,17 @@ data/
 output/
 models/
 weights/
+artifacts/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.db
+*.sqlite
+*.sqlite3
+*.h5
+*.npz
+*.glb
+*.ply
+*.pem
+*.key

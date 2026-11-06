@@ -165,6 +165,7 @@ def run_hloc_reconstruction(
         features_path,
         matches_path,
         camera_mode=camera_mode_enum,
+        image_list=image_list,
         mapper_options=dict(colmap_options or {}),
         verbose=verbose,
     )

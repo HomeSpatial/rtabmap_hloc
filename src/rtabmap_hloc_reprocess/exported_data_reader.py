@@ -7,6 +7,7 @@ import os
 import shutil
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from uuid import uuid4
 
 import numpy as np
 from scipy.spatial.transform import Rotation as ScipyRotation
@@ -129,7 +130,7 @@ class ExportedDataReader:
 
     def export_images(self, output_dir: Path, node_ids: Optional[List[int]] = None) -> Dict[int, str]:
         """
-        Symlink or copy exported images to the target directory.
+        Copy exported images into a self-contained result directory.
         Returns mapping from node_id -> filename.
         """
         output_dir = Path(output_dir)
@@ -148,16 +149,18 @@ class ExportedDataReader:
             if node_ids is not None and node_id not in node_ids:
                 continue
 
-            # Copy or symlink to output_dir
+            # Materialize photos: published descriptions cannot refer outside
+            # their root. Replacing a temporary copy also avoids writing through
+            # a symlink left by an older, unpublished run.
             out_name = f"{node_id:06d}{img_path.suffix}"
             out_path = output_dir / out_name
 
-            if not out_path.exists():
-                # Prefer symlink to save space, fallback to copy
-                try:
-                    os.symlink(img_path.absolute(), out_path)
-                except OSError:
-                    shutil.copy2(img_path, out_path)
+            temporary = out_path.with_name(f".{out_name}.{uuid4().hex}.tmp")
+            try:
+                shutil.copy2(img_path, temporary)
+                os.replace(temporary, out_path)
+            finally:
+                temporary.unlink(missing_ok=True)
 
             image_names[node_id] = out_name
 

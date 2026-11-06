@@ -6,16 +6,30 @@ import pytest
 from rtabmap_hloc_reprocess.rtabmap_reader import parse_camera_model
 
 
-def test_explicit_read_only_database_rejects_writes(tmp_path):
+@pytest.mark.parametrize("options", [{}, {"read_only": True}])
+def test_read_only_database_rejects_writes(tmp_path, options):
     from rtabmap_hloc_reprocess.rtabmap_reader import RTABMapDatabase
 
     path = tmp_path / "readonly.db"
     with sqlite3.connect(path) as conn:
         conn.execute("CREATE TABLE Node (id INTEGER)")
-    with RTABMapDatabase(str(path), read_only=True) as reader:
+    with RTABMapDatabase(str(path), **options) as reader:
         assert reader.get_node_ids() == []
         with pytest.raises(sqlite3.OperationalError, match="readonly"):
             reader.conn.execute("INSERT INTO Node VALUES (1)")
+
+
+def test_database_write_access_requires_explicit_opt_in(tmp_path):
+    from rtabmap_hloc_reprocess.rtabmap_reader import RTABMapDatabase
+
+    path = tmp_path / "writable.db"
+    with sqlite3.connect(path) as conn:
+        conn.execute("CREATE TABLE Node (id INTEGER)")
+    with RTABMapDatabase(str(path), read_only=False) as reader:
+        reader.conn.execute("INSERT INTO Node VALUES (7)")
+        reader.conn.commit()
+    with RTABMapDatabase(str(path)) as reader:
+        assert reader.get_node_ids() == [7]
 
 
 IDENTITY_LOCAL_TRANSFORM = (

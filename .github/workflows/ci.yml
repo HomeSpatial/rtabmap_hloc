@@ -1,0 +1,43 @@
+name: Tests and distributions
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      UV_PYTHON: '3.12'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Install locked public dependencies
+        run: uv sync --locked --extra dev
+      - name: Validate source and run tests
+        run: |
+          uv run --locked --extra dev python scripts/check_release.py
+          uv run --locked --extra dev python -m pytest -q
+          uv run --locked rtabmap-hloc --version
+          bash -n setup_env.sh
+      - name: Build and inspect wheel and sdist
+        run: |
+          uv run --locked --extra dev python -m build
+          uv run --locked --extra dev python -m twine check dist/*
+          uv run --locked --extra dev python scripts/check_release.py --dist dist
+      - name: Install wheel outside source tree
+        run: |
+          UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/wheel-env" uv sync --locked --no-install-project
+          uv pip install --python "$RUNNER_TEMP/wheel-env/bin/python" --no-deps dist/*.whl
+          cp scripts/smoke_installed.py "$RUNNER_TEMP/smoke_installed.py"
+          cd "$RUNNER_TEMP"
+          env -u PYTHONPATH "$RUNNER_TEMP/wheel-env/bin/python" smoke_installed.py

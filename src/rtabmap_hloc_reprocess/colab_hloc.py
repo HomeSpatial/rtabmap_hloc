@@ -397,7 +397,16 @@ def run_colab_features(
     image_list: list[str] | None = None,
     profile: str = PROFILE,
 ) -> dict[str, Path]:
-    from remap.colab.model_backend import ColabModelBackend
+    try:
+        from remap.colab.model_backend import ColabModelBackend
+    except ModuleNotFoundError as exc:
+        if exc.name not in {"remap", "remap.colab", "remap.colab.model_backend"}:
+            raise
+        raise RuntimeError(
+            "The Colab backend requires a separately installed, compatible remap "
+            "Colab adapter. Use --inference-backend torch for the standalone "
+            "package, or see docs/advanced.md for host integration."
+        ) from exc
 
     options = resolve_options(feature_conf, retrieval_conf, matcher_conf, num_matched)
     images = image_inputs(images_dir, image_list)

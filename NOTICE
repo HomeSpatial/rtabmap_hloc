@@ -1,0 +1,14 @@
+RTABMap-HLOC
+Copyright 2026 RTABMap-HLOC contributors
+
+Original source code, tests, schemas, scripts and documentation are licensed
+under the Apache License, Version 2.0, unless another license is stated.
+
+The reconstruction-description and scene-bundle reference implementation in
+src/rtabmap_hloc_reprocess/_exchange is shared with the Apache-2.0 core of
+Restruct (formerly Indoor Reconstruction).
+Copyright 2026 Indoor Reconstruction contributors
+SOURCE.json records the reference file hashes. No Blender component is included.
+
+This grant does not change the terms of external software, model weights or data.
+See THIRD_PARTY_NOTICES.md.

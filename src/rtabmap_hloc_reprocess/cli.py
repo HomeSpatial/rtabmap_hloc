@@ -8,10 +8,21 @@ from pathlib import Path
 from jsonschema import ValidationError
 
 
+def _positive_int(value):
+    parsed = int(value)
+    if parsed < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return parsed
+
+
 def main():
+    from . import __version__
+
     parser = argparse.ArgumentParser(
+        prog="rtabmap-hloc",
         description="Convert RTABMap database to HLOC format and perform sparse reconstruction"
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
     parser.add_argument(
         "rtabmap_db",
@@ -27,7 +38,7 @@ def main():
 
     parser.add_argument(
         "--inference-backend", choices=["torch", "colab"], default="torch",
-        help="Run HLOC models locally or in Colab; COLMAP remains on this host",
+        help="Run HLOC locally or with a separately installed remap Colab adapter; COLMAP stays local",
     )
     parser.add_argument(
         "--hloc-execution-profile", choices=["colab-models-l4-v1", "colab-models-l4-v2"],
@@ -60,7 +71,7 @@ def main():
 
     parser.add_argument(
         "--num-matched",
-        type=int,
+        type=_positive_int,
         default=20,
         help="Number of image pairs to match per image (default: 20)"
     )

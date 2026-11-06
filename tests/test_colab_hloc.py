@@ -14,6 +14,16 @@ import pytest
 from rtabmap_hloc_reprocess import colab_hloc, hloc_pipeline
 
 
+def test_missing_optional_colab_adapter_has_actionable_error(monkeypatch, tmp_path):
+    monkeypatch.setitem(sys.modules, "remap", None)
+    monkeypatch.delitem(sys.modules, "remap.colab.model_backend", raising=False)
+    with pytest.raises(RuntimeError, match="--inference-backend torch"):
+        colab_hloc.run_colab_features(
+            tmp_path, tmp_path / "output", "aliked-n16", "megaloc", "aliked+lightglue", 20
+        )
+    assert not (tmp_path / "output").exists()
+
+
 @pytest.fixture
 def options():
     return {

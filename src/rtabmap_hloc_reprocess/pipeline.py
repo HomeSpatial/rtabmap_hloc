@@ -437,8 +437,7 @@ class RTABMapHLOCPipeline:
     def _export_metadata(self, result: PipelineResult):
         """Export metadata.json (schema v2) consumed by build_map_pack and localization_service.
 
-        See openspec/changes/map-pack-pipeline/specs/map-pack-pipeline/spec.md for
-        the authoritative schema definition.
+        See docs/outputs.md for the public fields and their interpretation.
         """
         import json
 
@@ -534,7 +533,9 @@ class RTABMapHLOCPipeline:
                     self.image_to_node_id[filename] = node_id
             else:
                 # Load existing images
-                for img_path in self.images_dir.glob("*.png"):
+                for img_path in sorted(self.images_dir.iterdir()):
+                    if not img_path.is_file() or img_path.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+                        continue
                     try:
                         node_id = int(img_path.stem)
                         if node_id in self.rtabmap_poses:

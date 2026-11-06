@@ -1,3 +1,9 @@
 include uv.lock
 include setup_env.sh
+include LICENSE NOTICE THIRD_PARTY_NOTICES.md
+include README.zh-CN.md CONTRIBUTING.md SECURITY.md CHANGELOG.md
+include .gitattributes .gitignore release-files.json
+recursive-include .github *.yml *.md
+recursive-include docs *.md
+recursive-include scripts *.py
 recursive-include tests *.py

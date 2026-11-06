@@ -519,7 +519,7 @@ def decompress_image(data: bytes, is_depth: bool = False) -> Optional[np.ndarray
 class RTABMapDatabase:
     """Reader for RTABMap SQLite database"""
 
-    def __init__(self, db_path: str, *, read_only: bool = False):
+    def __init__(self, db_path: str, *, read_only: bool = True):
         self.db_path = Path(db_path)
         if not self.db_path.exists():
             raise FileNotFoundError(f"Database not found: {db_path}")

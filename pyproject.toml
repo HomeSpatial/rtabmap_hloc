@@ -4,6 +4,16 @@ version = "0.1.0"
 readme = "README.md"
 description = "Convert RTABMap database to COLMAP/HLOC format and perform sparse reconstruction"
 requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
+authors = [{name = "RTABMap-HLOC contributors"}]
+keywords = ["rtabmap", "hloc", "colmap", "structure-from-motion", "reconstruction"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
 dependencies = [
     "numpy",
     "opencv-python",
@@ -24,13 +34,20 @@ dev = [
     "pytest",
     "black",
     "isort",
+    "build>=1.2,<2",
+    "twine>=6,<7",
 ]
+
+[project.urls]
+Repository = "https://github.com/HomeSpatial/rtabmap_hloc"
+Issues = "https://github.com/HomeSpatial/rtabmap_hloc/issues"
+Documentation = "https://github.com/HomeSpatial/rtabmap_hloc#readme"
 
 [project.scripts]
 rtabmap-hloc = "rtabmap_hloc_reprocess.cli:main"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0.3", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -38,3 +55,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 rtabmap_hloc_reprocess = ["_exchange/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

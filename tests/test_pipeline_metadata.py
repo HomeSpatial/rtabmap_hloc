@@ -554,3 +554,4 @@ def test_run_hloc_reconstruction_passes_colmap_options_to_standard_sfm(
 
     assert result is not None
     assert captured["mapper_options"] == {"min_num_matches": 30}
+    assert captured["image_list"] == ["000001.png"]
